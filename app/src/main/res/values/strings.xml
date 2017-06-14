@@ -1,5 +1,9 @@
 <resources>
     <string name="app_name">SmartSearch</string>
     <string name="title_contact_detail">Contact Detail</string>
-    <string name="search">Search</string>
+    <string name="search">Search contacts here</string>
+
+    <string name="rebuild_index_progress_title">Building Index</string>
+    <string name="rebuild_index_progress_message">This may take a few seconds…</string>
+    <string name="rebuild_index_failed_msg">Failed to build the index</string>
 </resources>

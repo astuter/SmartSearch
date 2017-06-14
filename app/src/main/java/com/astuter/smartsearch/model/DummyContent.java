@@ -1,4 +1,4 @@
-package com.astuter.smartsearch.dummy;
+package com.astuter.smartsearch.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;

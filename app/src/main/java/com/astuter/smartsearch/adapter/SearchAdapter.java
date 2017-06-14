@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.astuter.smartsearch.R;
-import com.astuter.smartsearch.dummy.DummyContent;
+import com.astuter.smartsearch.model.DummyContent;
 import com.astuter.smartsearch.ui.ContactDetailActivity;
 import com.astuter.smartsearch.ui.ContactDetailFragment;
 import com.astuter.smartsearch.ui.ContactListActivity;

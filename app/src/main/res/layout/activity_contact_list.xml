@@ -7,34 +7,42 @@
     android:fitsSystemWindows="true"
     tools:context=".ui.ContactListActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/app_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
-
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
-
-    </android.support.design.widget.AppBarLayout>
-
     <FrameLayout
         android:id="@+id/frameLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@+id/app_bar"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <include layout="@layout/contact_list" />
     </FrameLayout>
 
-    <com.lapism.searchview.SearchView
-        android:id="@+id/search_view"
+
+    <android.support.design.widget.AppBarLayout
+        android:id="@+id/app_bar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_gravity="top"
-        app:layout_behavior="com.lapism.searchview.SearchBehavior" />
+        android:layout_height="wrap_content"
+        android:background="@color/search_layover_bg"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <FrameLayout
+            android:id="@+id/toolbar_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <android.support.v7.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/colorPrimary"
+                app:popupTheme="@style/AppTheme.PopupOverlay" />
+
+            <com.miguelcatalan.materialsearchview.MaterialSearchView
+                android:id="@+id/search_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </FrameLayout>
+
+    </android.support.design.widget.AppBarLayout>
 
 </android.support.design.widget.CoordinatorLayout>

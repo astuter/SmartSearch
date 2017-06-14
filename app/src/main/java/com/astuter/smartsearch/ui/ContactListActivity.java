@@ -1,23 +1,30 @@
 package com.astuter.smartsearch.ui;
 
+import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Intent;
+import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.speech.RecognizerIntent;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.astuter.smartsearch.R;
 import com.astuter.smartsearch.adapter.SearchAdapter;
-import com.astuter.smartsearch.dummy.DummyContent;
-import com.lapism.searchview.SearchItem;
-import com.lapism.searchview.SearchView;
+import com.astuter.smartsearch.model.DummyContent;
+import com.miguelcatalan.materialsearchview.MaterialSearchView;
 
+import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * An activity representing a list of Contacts. This activity
@@ -33,28 +40,16 @@ public class ContactListActivity extends AppCompatActivity {
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
+    private static final String TAG = ContactListActivity.class.getName();
     private boolean mTwoPane;
-    private SearchView mSearchView;
+    private MaterialSearchView mSearchView;
 
-    protected static final int NAV_ITEM_INVALID = -1;
-    protected static final int NAV_ITEM_TOOLBAR = 0;
-    protected static final int NAV_ITEM_MENU_ITEM = 1;
-    protected static final int NAV_ITEM_FILTERS = 2;
+    private static final String INDEX_DIR_NAME = "index";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contact_list);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-//        toolbar.setTitle(getTitle());
-
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.contact_list);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        SearchAdapter searchAdapter = new SearchAdapter(this, DummyContent.ITEMS, mTwoPane);
-        recyclerView.setAdapter(searchAdapter);
 
         if (findViewById(R.id.contact_detail_container) != null) {
             // The detail container view will be present only in the
@@ -64,150 +59,156 @@ public class ContactListActivity extends AppCompatActivity {
             mTwoPane = true;
         }
 
-        setSearchView();
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.contact_list);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        SearchAdapter searchAdapter = new SearchAdapter(this, DummyContent.ITEMS, mTwoPane);
+        recyclerView.setAdapter(searchAdapter);
+
+        mSearchView = (MaterialSearchView) findViewById(R.id.search_view);
+        mSearchView.setOnQueryTextListener(new MaterialSearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+
+                Log.e(TAG, "onQueryTextSubmit: " + query);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                Log.e(TAG, "onQueryTextChange: " + newText);
+                return false;
+            }
+        });
+
+        mSearchView.setOnSearchViewListener(new MaterialSearchView.SearchViewListener() {
+            @Override
+            public void onSearchViewShown() {
+                //Do some magic
+            }
+
+            @Override
+            public void onSearchViewClosed() {
+                //Do some magic
+            }
+        });
+
+        fetchPhoneContacts();
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == SearchView.SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
-            List<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            if (results != null && results.size() > 0) {
-                String searchWrd = results.get(0);
-                if (!TextUtils.isEmpty(searchWrd)) {
-                    if (mSearchView != null) {
-                        mSearchView.setQuery(searchWrd, true);
+    protected void onStart() {
+        super.onStart();
+        rebuildIndexIfNotExists();
+    }
+
+    private void fetchPhoneContacts() {
+        ContentResolver resolver = getContentResolver();
+        Cursor contacts = resolver.query(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
+        if (contacts != null && contacts.moveToFirst()) {
+            while (contacts.moveToNext()) {
+                String contactId = contacts.getString(contacts.getColumnIndex(ContactsContract.Contacts._ID));
+                String name = contacts.getString(contacts.getColumnIndex(ContactsContract.Data.DISPLAY_NAME));
+
+                // get the phone number if available
+                if (contacts.getInt(contacts.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
+                    Cursor phones = resolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?", new String[]{contactId}, null);
+
+                    if (phones != null && phones.moveToFirst()) {
+                        while (phones.moveToNext()) {
+                            String number = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        }
+                        phones.close();
                     }
                 }
             }
+            contacts.close();
+        }
+
+    }
+
+    private File getIndexRootDir() {
+        return new File(getCacheDir(), INDEX_DIR_NAME);
+    }
+
+    private void rebuildIndex() {
+        final ProgressDialog dialog = ProgressDialog.show(this, getString(R.string.rebuild_index_progress_title), getString(R.string.rebuild_index_progress_message), true);
+        new AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... voids) {
+                try {
+//                    InputStream is = MainActivity.this.getAssets().open(DATA_SOURCE);
+//                    Study.importData(is, getIndexRootDir().getAbsolutePath(), false);
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Boolean result) {
+                dialog.dismiss();
+                if (result) {
+//                    setStatus(getString(R.string.search));
+                } else {
+                    Toast.makeText(ContactListActivity.this, R.string.rebuild_index_failed_msg, Toast.LENGTH_SHORT).show();
+                }
+            }
+        }.execute();
+    }
+
+    private void rebuildIndexIfNotExists() {
+        if (!getIndexRootDir().exists()) {
+            rebuildIndex();
+        }
+    }
+
+//    void setStatus(String text) {
+//        if (text == null) {
+//            statusOuterView.setVisibility(View.INVISIBLE);
+//            statusText.setText("");
+//            listView.setVisibility(View.VISIBLE);
+//        } else {
+//            statusOuterView.setVisibility(View.VISIBLE);
+//            statusText.setText(text);
+//            listView.setVisibility(View.INVISIBLE);
+//        }
+//    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == MaterialSearchView.REQUEST_VOICE && resultCode == RESULT_OK) {
+            ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            if (matches != null && !matches.isEmpty()) {
+                String searchWrd = matches.get(0);
+                if (!TextUtils.isEmpty(searchWrd)) {
+                    mSearchView.setQuery(searchWrd, false);
+                }
+            }
+            return;
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
 
+
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_search: {
-                mSearchView.open(true); // enable or disable animation
-                return true;
-            }
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
-    /*private void setNavigationView() { // @Nullable
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        if (navigationView != null) {
-            navigationView.setNavigationItemSelectedListener(item -> {
-                int id = item.getItemId();
-
-                if (id == R.id.nav_item_toolbar || id == R.id.nav_item_filters) {
-                    Intent intent = new Intent(BaseActivity.this, id == R.id.nav_item_toolbar ? ToolbarActivity.class : FiltersActivity.class);
-                    intent.putExtra(EXTRA_KEY_VERSION, SearchView.VERSION_TOOLBAR);
-                    intent.putExtra(EXTRA_KEY_VERSION_MARGINS, SearchView.VERSION_MARGINS_TOOLBAR_SMALL);
-                    intent.putExtra(EXTRA_KEY_THEME, SearchView.THEME_LIGHT);
-                    startActivity(intent);
-                    finish();
-                }
-
-                if (id == R.id.nav_item_menu_item) {
-                    // Intent intent = new Intent(this, id == R.id.nav_toggle_versions ? ToggleActivity.class : HistoryActivity.class);
-                    Intent intent = new Intent(BaseActivity.this, MenuItemActivity.class);
-                    intent.putExtra(EXTRA_KEY_VERSION, SearchView.VERSION_MENU_ITEM);
-                    intent.putExtra(EXTRA_KEY_VERSION_MARGINS, SearchView.VERSION_MARGINS_MENU_ITEM);
-                    intent.putExtra(EXTRA_KEY_THEME, SearchView.THEME_LIGHT);
-                    startActivity(intent);
-                    finish();
-                }
-                return true;
-            });
-            if (getNavItem() > NAV_ITEM_INVALID) {
-                navigationView.getMenu().getItem(getNavItem()).setChecked(true);
-            }
-        }
-    }*/
-
-    // it can be in OnCreate
-    protected void setSearchView() {
-        mSearchView = (SearchView) findViewById(R.id.search_view);
-        if (mSearchView != null) {
-            mSearchView.setVersionMargins(SearchView.VERSION_MARGINS_TOOLBAR_SMALL);
-            mSearchView.setHint(R.string.search);
-            mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String query) {
-//                    getData(query, 0);
-                    mSearchView.close(false);
-                    return true;
-                }
-
-                @Override
-                public boolean onQueryTextChange(String newText) {
-                    return false;
-                }
-            });
-            mSearchView.setOnOpenCloseListener(new SearchView.OnOpenCloseListener() {
-                @Override
-                public boolean onOpen() {
-
-                    return true;
-                }
-
-                @Override
-                public boolean onClose() {
-
-                    return true;
-                }
-            });
-            mSearchView.setVoiceText("Set permission on Android 6.0+ !");
-            mSearchView.setOnVoiceClickListener(new SearchView.OnVoiceClickListener() {
-                @Override
-                public void onVoiceClick() {
-
-                }
-            });
-
-            List<SearchItem> suggestionsList = new ArrayList<>();
-            suggestionsList.add(new SearchItem("search1"));
-            suggestionsList.add(new SearchItem("search2"));
-            suggestionsList.add(new SearchItem("search3"));
-
-            SearchAdapter searchAdapter = new SearchAdapter(this, DummyContent.ITEMS, mTwoPane);
-//            searchAdapter.setOnSearchItemClickListener((view, position) -> {
-//                TextView textView = (TextView) view.findViewById(R.id.textView);
-//                String query = textView.getText().toString();
-//                getData(query, position);
-//                mSearchView.close(false);
-//            });
-            mSearchView.setAdapter(searchAdapter);
-
-            /*suggestionsList.add(new SearchItem("search12"));
-            suggestionsList.add(new SearchItem("search22"));
-            suggestionsList.add(new SearchItem("search32"));
-            searchAdapter.notifyDataSetChanged();*/
-            /*
-            List<SearchFilter> filter = new ArrayList<>();
-            filter.add(new SearchFilter("Filter1", true));
-            filter.add(new SearchFilter("Filter2", true));
-            mSearchView.setFilters(filter);
-            //use mSearchView.getFiltersStates() to consider filter when performing search
-            */
-        }
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_search, menu);
+        MenuItem item = menu.findItem(R.id.action_search);
+        mSearchView.setMenuItem(item);
+        return true;
     }
 
     @Override
     public void onBackPressed() {
         if (mSearchView.isSearchOpen()) {
-            mSearchView.close(true);
+            mSearchView.closeSearch();
         } else {
             super.onBackPressed();
         }
     }
-
-//    private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-//        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(DummyContent.ITEMS));
-//    }
-
 }

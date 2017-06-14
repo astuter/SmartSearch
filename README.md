@@ -10,4 +10,4 @@ It should have following capabilities:
 
 Following third party libraries are used in this project
 
-1) SearchView - https://github.com/lapism/SearchView
+1) MaterialSearchView - https://github.com/MiguelCatalan/MaterialSearchView
