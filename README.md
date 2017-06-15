@@ -11,3 +11,11 @@ It should have following capabilities:
 Following third party libraries are used in this project
 
 1) MaterialSearchView - https://github.com/MiguelCatalan/MaterialSearchView
+
+Reference:
+ 
+1) http://ramannanda.blogspot.in/2014/10/integrating-lucene-with-android.html
+
+2) https://www.javacodegeeks.com/2015/09/introduction-to-lucene.html
+
+3) http://www.lucenetutorial.com/index.html

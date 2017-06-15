@@ -24,8 +24,6 @@ import java.util.ArrayList;
 
 /**
  * Created by aniruddh on 14/06/17.
- *
- * reference from: http://ramannanda.blogspot.in/2014/10/integrating-lucene-with-android.html
  */
 
 public class LuceneSearchUtil {
