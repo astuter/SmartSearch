@@ -27,6 +27,6 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:25.2.0'
     compile 'com.android.support:design:25.2.0'
     compile 'com.miguelcatalan:materialsearchview:1.4.0'
-    compile files('libs/lucene-core-6.6.0.jar')
-    compile files('libs/lucene-highlighter-6.6.0.jar')
+    compile files('libs/lucene-core-4.3.0.jar')
+    compile files('libs/lucene-highlighter-4.3.0.jar')
 }

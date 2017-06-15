@@ -9,6 +9,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class AppController extends Application {
     public void onCreate() {
         super.onCreate();
 
-        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
 
         IndexWriterConfig config = new IndexWriterConfig(analyzer);
         //pick the buffer size from property
